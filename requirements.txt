@@ -1,0 +1,13 @@
+PySide6
+vdf
+legendary-gl
+Flask
+pywebview
+requests
+build
+installer
+hatchling
+hatch-vcs
+setuptools-scm<9
+pyzstd
+python-xlib

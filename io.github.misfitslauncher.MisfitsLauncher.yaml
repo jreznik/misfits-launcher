@@ -1,0 +1,72 @@
+app-id: io.github.misfitslauncher.MisfitsLauncher
+runtime: org.kde.Platform
+runtime-version: '6.8'
+sdk: org.kde.Sdk
+command: misfitslauncher
+
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --socket=pulseaudio
+  - --share=network
+  - --device=all
+  - --filesystem=home
+  - --filesystem=host
+  - --filesystem=/tmp
+  - --filesystem=/dev/shm
+  - --filesystem=xdg-run/app/com.steampowered.Steam:ro
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.freedesktop.Flatpak # Required for flatpak-spawn --host
+  - --env=PYTHONPATH=/app/lib/python3.12/site-packages
+
+modules:
+  - name: krb5
+    subdir: src
+    config-opts:
+      - --localstatedir=/var/lib
+      - --disable-rpath
+      - --disable-static
+    post-install:
+      - install -Dm644 ../krb5.conf /app/etc/krb5.conf
+    sources:
+      - type: archive
+        url: https://kerberos.org/dist/krb5/1.21/krb5-1.21.3.tar.gz
+        sha256: b7a4cd5ead67fb08b980b21abd150ff7217e85ea320c9ed0c6dadd304840ad35
+      - type: file
+        path: krb5.conf
+
+  - name: python3-requirements
+    buildsystem: simple
+    build-options:
+      build-args:
+        - --share=network
+    build-commands:
+      - pip3 install --prefix=/app -r requirements.txt
+    sources:
+      - type: file
+        path: requirements.txt
+
+  - name: umu-launcher
+    buildsystem: simple
+    build-options:
+      build-args:
+        - --share=network
+    build-commands:
+      - mkdir -p bin && echo "#!/bin/sh" > bin/scdoc && chmod +x bin/scdoc && export PATH=$PATH:$(pwd)/bin && pip3 install --prefix=/app .
+    sources:
+      - type: archive
+        url: https://github.com/Open-Wine-Components/umu-launcher/archive/refs/heads/main.tar.gz
+        sha256: 7207df41f1e1ff1b19767a14611c82f4dedab70e4bc3d05b590d26fd6cd973ae
+
+  - name: misfitslauncher
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/bin
+      - mkdir -p /app/share/misfitslauncher
+      - cp -r src /app/share/misfitslauncher/
+      - cp main.py /app/share/misfitslauncher/
+      - install -D -m 755 misfitslauncher.sh /app/bin/misfitslauncher
+    sources:
+      - type: dir
+        path: .
