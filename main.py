@@ -1,7 +1,7 @@
 import sys
 import os
 from PySide6.QtGui import QGuiApplication, QKeyEvent
-from PySide6.QtCore import QObject, QTimer, QEvent, Qt, QCoreApplication, QDateTime
+from PySide6.QtCore import QObject, Signal, QTimer, QEvent, Qt, QCoreApplication, QDateTime
 from PySide6.QtQml import QQmlApplicationEngine
 from src.backend.database import init_db
 from src.backend.game_manager import GameManager
@@ -10,6 +10,11 @@ from src.backend.umu_runtime_manager import UMURuntimeManager
 from src.backend.download_manager import DownloadManager
 
 class GamepadManager(QObject):
+    backPressed = Signal()
+    menuPressed = Signal()
+    l1Pressed = Signal()
+    r1Pressed = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.controller = None
@@ -271,13 +276,11 @@ class GamepadManager(QObject):
     def handle_button(self, btn, is_down):
         if not is_down:
             return
-            
+
         import sdl2
-        # Map controller buttons to standard navigation keys
+        # Navigation and select — use key events (work at item focus level)
         if btn == sdl2.SDL_CONTROLLER_BUTTON_A:
             self.send_key(Qt.Key_Return)
-        elif btn == sdl2.SDL_CONTROLLER_BUTTON_B:
-            self.send_key(Qt.Key_Escape)
         elif btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_UP:
             self.send_key(Qt.Key_Up)
         elif btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_DOWN:
@@ -286,20 +289,23 @@ class GamepadManager(QObject):
             self.send_key(Qt.Key_Left)
         elif btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
             self.send_key(Qt.Key_Right)
-        elif btn == sdl2.SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
-            self.send_key(Qt.Key_F1)
-        elif btn == sdl2.SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
-            self.send_key(Qt.Key_F2)
-        elif btn == sdl2.SDL_CONTROLLER_BUTTON_BACK:
-            self.send_key(Qt.Key_Menu)
-        elif btn == sdl2.SDL_CONTROLLER_BUTTON_START:
-            self.send_key(Qt.Key_M)
         elif btn == sdl2.SDL_CONTROLLER_BUTTON_X:
             self.send_key(Qt.Key_X)
         elif btn == sdl2.SDL_CONTROLLER_BUTTON_Y:
             self.send_key(Qt.Key_Y)
+        # Global actions — use signals for reliable delivery
+        elif btn == sdl2.SDL_CONTROLLER_BUTTON_B:
+            self.backPressed.emit()
+        elif btn == sdl2.SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+            self.l1Pressed.emit()
+        elif btn == sdl2.SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+            self.r1Pressed.emit()
+        elif btn == sdl2.SDL_CONTROLLER_BUTTON_BACK:
+            self.menuPressed.emit()
+        elif btn == sdl2.SDL_CONTROLLER_BUTTON_START:
+            self.menuPressed.emit()
         elif btn == sdl2.SDL_CONTROLLER_BUTTON_GUIDE:
-            self.send_key(Qt.Key_M)
+            self.menuPressed.emit()
 
 def main():
     # Initialize DB
@@ -324,6 +330,7 @@ def main():
     engine.rootContext().setContextProperty("accountManager", account_manager)
     engine.rootContext().setContextProperty("umuManager", umu_manager)
     engine.rootContext().setContextProperty("downloadManager", download_manager)
+    engine.rootContext().setContextProperty("gamepadManager", gamepad_manager)
 
     # Load QML
     qml_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "src/ui/qml/main.qml"))

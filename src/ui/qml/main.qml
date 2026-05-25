@@ -46,20 +46,9 @@ ApplicationWindow {
         }
     }
 
-    // Catches controller-emitted keys delivered via sendEvent to the window
-    // L1/R1 use F1/F2 to avoid conflict with GridView/Flickable consuming PgUp/PgDown
+    // Keyboard shortcuts (these work via OS key delivery to focused items)
     Keys.onPressed: (event) => {
-        if (event.key === Qt.Key_F1) {
-            if (mainStack.currentItem.objectName === "libraryView") {
-                mainStack.replace(homeView)
-                event.accepted = true
-            }
-        } else if (event.key === Qt.Key_F2) {
-            if (mainStack.currentItem.objectName === "homeView") {
-                mainStack.replace(libraryView)
-                event.accepted = true
-            }
-        } else if (event.key === Qt.Key_M || event.key === Qt.Key_Menu) {
+        if (event.key === Qt.Key_M || event.key === Qt.Key_Menu) {
             if (mainStack.currentItem.objectName !== "settingsView") {
                 mainStack.push(settingsView)
                 event.accepted = true
@@ -74,6 +63,27 @@ ApplicationWindow {
                 mainStack.pop()
                 event.accepted = true
             }
+        }
+    }
+
+    // Controller global actions — delivered via Qt signals, bypasses key routing
+    Connections {
+        target: gamepadManager
+        function onL1Pressed() {
+            if (mainStack.currentItem.objectName === "libraryView")
+                mainStack.replace(homeView)
+        }
+        function onR1Pressed() {
+            if (mainStack.currentItem.objectName === "homeView")
+                mainStack.replace(libraryView)
+        }
+        function onBackPressed() {
+            if (mainStack.depth > 1)
+                mainStack.pop()
+        }
+        function onMenuPressed() {
+            if (mainStack.currentItem.objectName !== "settingsView")
+                mainStack.push(settingsView)
         }
     }
     
