@@ -30,39 +30,49 @@ ApplicationWindow {
             }
         }
 
-        // Global Navigation
+        // Catches keyboard PgUp/PgDown delivered directly when StackView has focus
         Keys.onPressed: (event) => {
-            console.log("DEBUG: StackView Key pressed:", event.key, "text:", event.text)
-
-            // Standard SteamOS Bumper logic (L1/R1)
-            // Support R1, R2, and PageDown for switching to Library
-            if (event.key === Qt.Key_PageDown || event.key === Qt.Key_R1 || event.key === Qt.Key_R2) {
+            if (event.key === Qt.Key_PageDown) {
                 if (mainStack.currentItem.objectName === "homeView") {
                     mainStack.replace(libraryView)
                     event.accepted = true
                 }
-            } 
-            // Support L1, L2, and PageUp for switching back to Home
-            else if (event.key === Qt.Key_PageUp || event.key === Qt.Key_L1 || event.key === Qt.Key_L2) {
+            } else if (event.key === Qt.Key_PageUp) {
                 if (mainStack.currentItem.objectName === "libraryView") {
                     mainStack.replace(homeView)
                     event.accepted = true
                 }
-            } else if (event.key === Qt.Key_M || event.key === Qt.Key_Menu) {
-                if (mainStack.currentItem.objectName !== "settingsView") {
-                    mainStack.push(settingsView)
-                    event.accepted = true
-                }
-            } else if (event.key === Qt.Key_D) {
-                if (mainStack.currentItem.objectName !== "downloadView") {
-                    mainStack.push(downloadView)
-                    event.accepted = true
-                }
-            } else if (event.key === Qt.Key_Escape || event.key === Qt.Key_B) {
-                if (mainStack.depth > 1) {
-                    mainStack.pop()
-                    event.accepted = true
-                }
+            }
+        }
+    }
+
+    // Catches controller-emitted keys delivered via sendEvent to the window
+    // L1/R1 use F1/F2 to avoid conflict with GridView/Flickable consuming PgUp/PgDown
+    Keys.onPressed: (event) => {
+        if (event.key === Qt.Key_F1) {
+            if (mainStack.currentItem.objectName === "libraryView") {
+                mainStack.replace(homeView)
+                event.accepted = true
+            }
+        } else if (event.key === Qt.Key_F2) {
+            if (mainStack.currentItem.objectName === "homeView") {
+                mainStack.replace(libraryView)
+                event.accepted = true
+            }
+        } else if (event.key === Qt.Key_M || event.key === Qt.Key_Menu) {
+            if (mainStack.currentItem.objectName !== "settingsView") {
+                mainStack.push(settingsView)
+                event.accepted = true
+            }
+        } else if (event.key === Qt.Key_D) {
+            if (mainStack.currentItem.objectName !== "downloadView") {
+                mainStack.push(downloadView)
+                event.accepted = true
+            }
+        } else if (event.key === Qt.Key_Escape || event.key === Qt.Key_B) {
+            if (mainStack.depth > 1) {
+                mainStack.pop()
+                event.accepted = true
             }
         }
     }
