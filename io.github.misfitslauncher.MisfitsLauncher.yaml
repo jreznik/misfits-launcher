@@ -67,6 +67,9 @@ modules:
       - cp -r src /app/share/misfitslauncher/
       - cp main.py /app/share/misfitslauncher/
       - install -D -m 755 misfitslauncher.sh /app/bin/misfitslauncher
+      - install -D -m 644 io.github.misfitslauncher.MisfitsLauncher.desktop /app/share/applications/io.github.misfitslauncher.MisfitsLauncher.desktop
+      - install -D -m 644 io.github.misfitslauncher.MisfitsLauncher.metainfo.xml /app/share/metainfo/io.github.misfitslauncher.MisfitsLauncher.metainfo.xml
+      - install -D -m 644 icons/io.github.misfitslauncher.MisfitsLauncher.png /app/share/icons/hicolor/256x256/apps/io.github.misfitslauncher.MisfitsLauncher.png
     sources:
       - type: dir
         path: .

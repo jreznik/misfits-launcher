@@ -1,6 +1,6 @@
 # MisfitsLauncher
 
-MisfitsLauncher is a hardware-accelerated, controller-first game launcher designed specifically for the Steam Deck and SteamOS.
+Steam Deck look & feel, touchscreen and controller friendly launcher for alternative game stores.
 
 ## Motivation
 The primary goal of this project was to create a launcher that provides a native Steam Deck look and feel, optimized for touchscreen and physical controller navigation. It is designed to be a simple, lightweight bridge for alternative game stores without the complexity of larger tools.

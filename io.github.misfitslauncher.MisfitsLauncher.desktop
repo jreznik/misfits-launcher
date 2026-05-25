@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Misfits Launcher
+Comment=A high-fidelity game launcher for Steam Deck
+Exec=misfitslauncher
+Icon=io.github.misfitslauncher.MisfitsLauncher
+Terminal=false
+Categories=Game;
+Keywords=Game;Launcher;SteamDeck;Epic;
+X-KDE-Wayland-InterfacesTerminated=true
