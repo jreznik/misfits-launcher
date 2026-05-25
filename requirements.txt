@@ -11,3 +11,4 @@ hatch-vcs
 setuptools-scm<9
 pyzstd
 python-xlib
+pysdl2

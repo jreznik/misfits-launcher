@@ -4,6 +4,7 @@ import sqlite3
 import os
 import re
 import threading
+import shutil
 from PySide6.QtCore import QObject, Signal, Slot
 from .database import get_db_connection
 from .protondb_service import ProtonDBService

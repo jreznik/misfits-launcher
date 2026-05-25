@@ -121,6 +121,16 @@ Item {
                     border.color: activeFocus ? (libraryRoot.activeFilterIndex === index ? "#3a91f4" : "white") : "transparent"
                     border.width: 3
                     focus: true
+                    
+                    // Hardware selection support
+                    Keys.onPressed: (event) => {
+                        if (event.key === Qt.Key_Return || event.key === Qt.Key_Select || event.key === Qt.Key_Enter) {
+                            libraryRoot.activeFilterIndex = index
+                            gameManager.filter_library(modelData.name)
+                            event.accepted = true
+                        }
+                    }
+
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
@@ -273,12 +283,17 @@ Item {
     }
     
     Keys.onPressed: (event) => {
+        // L1/R1 for tab switching is handled in main.qml
+        // L2/R2 for filter cycling
         if (event.key === Qt.Key_BracketLeft || event.key === Qt.Key_L2) {
             cycleFilter(-1); event.accepted = true
         } else if (event.key === Qt.Key_BracketRight || event.key === Qt.Key_R2) {
             cycleFilter(1); event.accepted = true
-        } else if (event.key === Qt.Key_Y) {
+        } else if (event.key === Qt.Key_Y || event.key === Qt.Key_Menu) {
             showSortMenu = !showSortMenu
+            event.accepted = true
+        } else if (event.key === Qt.Key_X) {
+            cycleFilter(1)
             event.accepted = true
         }
     }

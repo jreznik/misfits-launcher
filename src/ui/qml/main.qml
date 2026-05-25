@@ -8,8 +8,8 @@ ApplicationWindow {
     visible: true
     title: "MisfitsLauncher"
     color: "#1a1a1a"
-    
     // Main Background
+
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
@@ -32,12 +32,18 @@ ApplicationWindow {
 
         // Global Navigation
         Keys.onPressed: (event) => {
-            if (event.key === Qt.Key_PageDown || event.key === Qt.Key_R1) {
+            console.log("DEBUG: StackView Key pressed:", event.key, "text:", event.text)
+
+            // Standard SteamOS Bumper logic (L1/R1)
+            // Support R1, R2, and PageDown for switching to Library
+            if (event.key === Qt.Key_PageDown || event.key === Qt.Key_R1 || event.key === Qt.Key_R2) {
                 if (mainStack.currentItem.objectName === "homeView") {
                     mainStack.replace(libraryView)
                     event.accepted = true
                 }
-            } else if (event.key === Qt.Key_PageUp || event.key === Qt.Key_L1) {
+            } 
+            // Support L1, L2, and PageUp for switching back to Home
+            else if (event.key === Qt.Key_PageUp || event.key === Qt.Key_L1 || event.key === Qt.Key_L2) {
                 if (mainStack.currentItem.objectName === "libraryView") {
                     mainStack.replace(homeView)
                     event.accepted = true

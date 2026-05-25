@@ -2,13 +2,13 @@
 <component type="desktop-application">
   <id>io.github.misfitslauncher.MisfitsLauncher</id>
   <name>Misfits Launcher</name>
-  <summary>Steam Deck look & feel, touchscreen and controller friendly launcher</summary>
+  <summary>Steam Deck look &amp; feel, touchscreen and controller friendly launcher</summary>
   <developer_name>Jaroslav Reznik</developer_name>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
   <description>
     <p>
-      Steam Deck look & feel, touchscreen and controller friendly launcher for alternative game stores.
+      Steam Deck look &amp; feel, touchscreen and controller friendly launcher for alternative game stores.
     </p>
   </description>
   <launchable type="desktop-id">io.github.misfitslauncher.MisfitsLauncher.desktop</launchable>

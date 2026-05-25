@@ -21,6 +21,11 @@ Item {
     // Reactive properties
     property string gameDescription: ""
     property string lastPlayedText: "Never"
+    property string gameSizeText: ""
+
+    // Force re-check when returning to this view
+    onVisibleChanged: { if (visible) checkDownloadStatus() }
+    onActiveFocusChanged: { if (activeFocus) checkDownloadStatus() }
 
     // Background Hero Art
     Image {
@@ -150,13 +155,24 @@ Item {
                 // Stats Block
                 Rectangle {
                     id: statsBlock; Layout.fillWidth: true; Layout.fillHeight: true; color: "#1e2129"
-                    ColumnLayout {
-                        anchors.centerIn: parent
-                        spacing: 2
-                        Text { text: "LAST PLAYED"; color: "#888"; font.pixelSize: 14; font.bold: true; Layout.alignment: Qt.AlignLeft }
-                        Text { 
-                            text: detailRoot.lastPlayedText
-                            color: "white"; font.pixelSize: 18; font.bold: true; Layout.alignment: Qt.AlignLeft
+                    RowLayout {
+                        anchors.fill: parent; anchors.leftMargin: 40; spacing: 40
+                        ColumnLayout {
+                            spacing: 2
+                            Text { text: "LAST PLAYED"; color: "#888"; font.pixelSize: 14; font.bold: true }
+                            Text { 
+                                text: detailRoot.lastPlayedText
+                                color: "white"; font.pixelSize: 18; font.bold: true 
+                            }
+                        }
+                        ColumnLayout {
+                            spacing: 2
+                            visible: detailRoot.gameSizeText !== ""
+                            Text { text: "SIZE"; color: "#888"; font.pixelSize: 14; font.bold: true }
+                            Text { 
+                                text: detailRoot.gameSizeText
+                                color: "white"; font.pixelSize: 18; font.bold: true 
+                            }
                         }
                     }
                     KeyNavigation.left: primaryActionBtn
@@ -337,6 +353,12 @@ Item {
             } else {
                 lastPlayedText = "Never"
             }
+
+            if (info.disk_size_gb) {
+                gameSizeText = info.disk_size_gb + " GB"
+            } else {
+                gameSizeText = ""
+            }
             
             checkDownloadStatus()
         }
@@ -372,7 +394,11 @@ Item {
                 isDownloading = true; break
             }
         }
-        if (!found && isDownloading) { isDownloading = false; gameManager.fetch_game_info(appId) }
+        if (!found && isDownloading) { 
+            isDownloading = false
+            isInstalling = false
+            gameManager.fetch_game_info(appId) 
+        }
     }
 
     Connections {
