@@ -16,9 +16,19 @@ finish-args:
   - --filesystem=/tmp
   - --filesystem=/dev/shm
   - --filesystem=xdg-run/app/com.steampowered.Steam:ro
+  - --filesystem=xdg-run/gamescope-0
+  - --filesystem=xdg-data/umu:create
+  - --filesystem=~/.steam
+  - --filesystem=/run/udev:ro
   - --talk-name=org.freedesktop.Notifications
-  - --talk-name=org.freedesktop.Flatpak # Required for flatpak-spawn --host
+  - --talk-name=org.freedesktop.Flatpak
   - --env=PYTHONPATH=/app/lib/python3.12/site-packages
+  - --unset-env=STEAM_RUNTIME
+  - --unset-env=STEAM_RUNTIME_PREFER_HOST_LIBRARIES
+  - --unset-env=SDL_VIDEODRIVER
+  - --unset-env=MESA_GLSL_CACHE_DIR
+  - --feature=multiarch
+  - --feature=per-app-dev-shm
 
 modules:
   - name: krb5
