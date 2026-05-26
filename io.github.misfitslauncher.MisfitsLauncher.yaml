@@ -27,8 +27,6 @@ finish-args:
   - --unset-env=STEAM_RUNTIME_PREFER_HOST_LIBRARIES
   - --unset-env=SDL_VIDEODRIVER
   - --unset-env=MESA_GLSL_CACHE_DIR
-  - --feature=multiarch
-  - --feature=per-app-dev-shm
 
 modules:
   - name: krb5
