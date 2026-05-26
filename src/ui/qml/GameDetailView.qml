@@ -17,6 +17,7 @@ Item {
     property bool isInstalling: false
     property bool isLoading: true
     property bool isDownloading: false
+    property bool showConfirmUninstall: false
     
     // Reactive properties
     property string gameDescription: ""
@@ -94,6 +95,80 @@ Item {
                 MouseArea { anchors.fill: parent; onClicked: { isLaunching = false; isInstalling = false } }
                 Keys.onPressed: (event) => { if (event.key === Qt.Key_Return || event.key === Qt.Key_Select) { isLaunching = false; isInstalling = false; event.accepted = true } }
                 focus: progressOverlay.visible
+            }
+        }
+    }
+
+    // Uninstall Confirmation Dialog
+    Rectangle {
+        id: confirmOverlay
+        anchors.fill: parent
+        color: "black"
+        opacity: 0.85
+        visible: showConfirmUninstall
+        z: 250
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: 500; height: 280; radius: 16
+            color: "#1a1b26"; border.color: "#3d4450"; border.width: 2
+
+            ColumnLayout {
+                anchors.fill: parent; anchors.margins: 40
+                spacing: 30
+
+                Text {
+                    text: "Uninstall Game?"
+                    color: "white"; font.pixelSize: 28; font.bold: true
+                    Layout.alignment: Qt.AlignCenter
+                }
+
+                Text {
+                    text: "This will permanently remove the game files.\\nYour saves and cloud data will not be affected."
+                    color: "#aaaaaa"; font.pixelSize: 16
+                    Layout.alignment: Qt.AlignCenter; horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true; spacing: 20
+
+                    Rectangle {
+                        id: cancelUninstallBtn
+                        Layout.fillWidth: true; height: 60; radius: 30
+                        color: activeFocus ? "#3d4450" : "#2a2a2a"
+                        border.color: activeFocus ? "white" : "transparent"; border.width: 2
+                        Text { anchors.centerIn: parent; text: "CANCEL"; color: "white"; font.bold: true; font.pixelSize: 18 }
+                        MouseArea { anchors.fill: parent; onClicked: { showConfirmUninstall = false; primaryActionBtn.forceActiveFocus() } }
+                        Keys.onPressed: (event) => {
+                            if (event.key === Qt.Key_Return || event.key === Qt.Key_Select) {
+                                showConfirmUninstall = false; primaryActionBtn.forceActiveFocus(); event.accepted = true
+                            }
+                        }
+                        KeyNavigation.right: confirmUninstallBtn
+                    }
+
+                    Rectangle {
+                        id: confirmUninstallBtn
+                        Layout.fillWidth: true; height: 60; radius: 30
+                        color: activeFocus ? "#c0392b" : "#8e1a1a"
+                        border.color: activeFocus ? "white" : "transparent"; border.width: 2
+                        Text { anchors.centerIn: parent; text: "CONFIRM"; color: "white"; font.bold: true; font.pixelSize: 18 }
+                        MouseArea { anchors.fill: parent; onClicked: { showConfirmUninstall = false; gameManager.uninstall_game(appId); isLaunching = true; launchStatus = "Uninstalling..." } }
+                        Keys.onPressed: (event) => {
+                            if (event.key === Qt.Key_Return || event.key === Qt.Key_Select) {
+                                showConfirmUninstall = false; gameManager.uninstall_game(appId); isLaunching = true; launchStatus = "Uninstalling..."; event.accepted = true
+                            }
+                        }
+                        KeyNavigation.left: cancelUninstallBtn
+                    }
+                }
+            }
+        }
+
+        Keys.onPressed: (event) => {
+            if (event.key === Qt.Key_Escape || event.key === Qt.Key_Back) {
+                showConfirmUninstall = false; primaryActionBtn.forceActiveFocus(); event.accepted = true
             }
         }
     }
@@ -251,11 +326,11 @@ Item {
                         KeyNavigation.left: steamBtn
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: { gameManager.uninstall_game(appId); isLaunching = true; launchStatus = "Uninstalling..." }
+                            onClicked: { showConfirmUninstall = true; confirmUninstallBtn.forceActiveFocus() }
                         }
                         Keys.onPressed: (event) => {
                             if (event.key === Qt.Key_Return || event.key === Qt.Key_Select) {
-                                gameManager.uninstall_game(appId); isLaunching = true; launchStatus = "Uninstalling..."; event.accepted = true
+                                showConfirmUninstall = true; confirmUninstallBtn.forceActiveFocus(); event.accepted = true
                             }
                         }
                     }

@@ -111,12 +111,17 @@ class GameService(QObject):
     def uninstall_game(self, app_id):
         def run_uninstall():
             try:
+                from .umu_launcher import find_legendary
+                legendary_bin = find_legendary()
                 process = subprocess.run(
-                    ["legendary", "uninstall", app_id],
+                    [legendary_bin, "uninstall", app_id, "-y"],
                     capture_output=True,
                     text=True
                 )
                 success = (process.returncode == 0)
+                print(f"Uninstall: legendary exited with code {process.returncode}")
+                if process.stdout: print(f"Uninstall stdout: {process.stdout.strip()}")
+                if process.stderr: print(f"Uninstall stderr: {process.stderr.strip()}")
                 if success:
                     conn = get_db_connection()
                     cursor = conn.cursor()
