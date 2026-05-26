@@ -92,8 +92,12 @@ class UMULauncher(QObject):
                     "--wrapper", umu_path, "--no-wine"
                 ]
 
-                # UMU needs these to identify the game and store
+                # Strip Qt/Flatpak env vars that can interfere with game rendering in Gamescope
                 launch_env = os.environ.copy()
+                for var in ["QT_QPA_PLATFORM", "QSG_RHI_BACKEND", "PYTHONPATH", "PYTHONHOME",
+                            "LD_LIBRARY_PATH", "LD_PRELOAD", "GI_TYPELIB_PATH"]:
+                    launch_env.pop(var, None)
+                # UMU needs these to identify the game and store
                 launch_env["GAMEID"] = app_id
                 launch_env["UMU_ID"] = app_id
                 launch_env["STORE"] = "epic"
