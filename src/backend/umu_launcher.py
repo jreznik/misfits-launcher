@@ -91,13 +91,22 @@ class UMULauncher(QObject):
                     legendary_bin, "launch", app_id,
                     "--wrapper", umu_path, "--no-wine"
                 ]
+
+                # UMU needs these to identify the game and store
+                launch_env = os.environ.copy()
+                launch_env["GAMEID"] = app_id
+                launch_env["UMU_ID"] = app_id
+                launch_env["STORE"] = "epic"
+
                 log(f"Launch command: {' '.join(cmd)}")
-                log(f"Full env: LEGENDARY_CONFIG_PATH={os.environ.get('LEGENDARY_CONFIG_PATH', 'UNSET')}")
+                log(f"LEGENDARY_CONFIG_PATH={launch_env.get('LEGENDARY_CONFIG_PATH', 'UNSET')}")
+                log(f"GAMEID={app_id} STORE=epic")
 
                 self.output_received.emit(f"Starting {app_name}...")
 
                 process = subprocess.Popen(
                     cmd,
+                    env=launch_env,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
