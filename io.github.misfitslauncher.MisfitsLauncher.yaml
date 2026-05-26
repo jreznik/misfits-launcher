@@ -17,7 +17,6 @@ finish-args:
   - --filesystem=/dev/shm
   - --filesystem=xdg-run/app/com.steampowered.Steam:ro
   - --filesystem=xdg-run/gamescope-0
-  - --filesystem=xdg-data/umu:create
   - --filesystem=~/.steam
   - --filesystem=/run/udev:ro
   - --talk-name=org.freedesktop.Notifications
