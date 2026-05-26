@@ -84,6 +84,18 @@ class GamepadManager(QObject):
         if not self.controller:
             print("DEBUG: No gamepad/game controller detected yet.")
 
+    def send_key(self, key_code):
+        app = QCoreApplication.instance()
+        if not app:
+            return
+        win = app.focusWindow()
+        if not win:
+            return
+        press = QKeyEvent(QEvent.Type.KeyPress, key_code, Qt.KeyboardModifier.NoModifier)
+        QCoreApplication.sendEvent(win, press)
+        release = QKeyEvent(QEvent.Type.KeyRelease, key_code, Qt.KeyboardModifier.NoModifier)
+        QCoreApplication.sendEvent(win, release)
+
     @Slot(int)
     def injectKey(self, key_code):
         app = QCoreApplication.instance()
@@ -92,7 +104,6 @@ class GamepadManager(QObject):
         target = app.focusObject()
         if not target:
             return
-
         press = QKeyEvent(QEvent.Type.KeyPress, key_code, Qt.KeyboardModifier.NoModifier)
         QCoreApplication.sendEvent(target, press)
         release = QKeyEvent(QEvent.Type.KeyRelease, key_code, Qt.KeyboardModifier.NoModifier)
@@ -163,23 +174,20 @@ class GamepadManager(QObject):
         if new_lx_state != self.last_axis_state["LeftX"]:
             self.last_axis_state["LeftX"] = new_lx_state
             if new_lx_state == -1:
-                self.leftPressed.emit()
-                self.last_key_sent["LeftX"] = "left"
+                self.send_key(Qt.Key_Left)
+                self.last_key_sent["LeftX"] = Qt.Key_Left
                 self.last_key_time["LeftX"] = current_time
             elif new_lx_state == 1:
-                self.rightPressed.emit()
-                self.last_key_sent["LeftX"] = "right"
+                self.send_key(Qt.Key_Right)
+                self.last_key_sent["LeftX"] = Qt.Key_Right
                 self.last_key_time["LeftX"] = current_time
             else:
                 self.last_key_sent.pop("LeftX", None)
                 self.last_key_time.pop("LeftX", None)
         elif new_lx_state != 0:
-            expected = "left" if new_lx_state == -1 else "right"
+            expected = Qt.Key_Left if new_lx_state == -1 else Qt.Key_Right
             if self.last_key_sent.get("LeftX") == expected and (current_time - self.last_key_time.get("LeftX", 0) > self.repeat_interval):
-                if new_lx_state == -1:
-                    self.leftPressed.emit()
-                else:
-                    self.rightPressed.emit()
+                self.send_key(expected)
                 self.last_key_time["LeftX"] = current_time
 
         # Left Stick Y-axis
@@ -192,23 +200,20 @@ class GamepadManager(QObject):
         if new_ly_state != self.last_axis_state["LeftY"]:
             self.last_axis_state["LeftY"] = new_ly_state
             if new_ly_state == -1:
-                self.upPressed.emit()
-                self.last_key_sent["LeftY"] = "up"
+                self.send_key(Qt.Key_Up)
+                self.last_key_sent["LeftY"] = Qt.Key_Up
                 self.last_key_time["LeftY"] = current_time
             elif new_ly_state == 1:
-                self.downPressed.emit()
-                self.last_key_sent["LeftY"] = "down"
+                self.send_key(Qt.Key_Down)
+                self.last_key_sent["LeftY"] = Qt.Key_Down
                 self.last_key_time["LeftY"] = current_time
             else:
                 self.last_key_sent.pop("LeftY", None)
                 self.last_key_time.pop("LeftY", None)
         elif new_ly_state != 0:
-            expected = "up" if new_ly_state == -1 else "down"
+            expected = Qt.Key_Up if new_ly_state == -1 else Qt.Key_Down
             if self.last_key_sent.get("LeftY") == expected and (current_time - self.last_key_time.get("LeftY", 0) > self.repeat_interval):
-                if new_ly_state == -1:
-                    self.upPressed.emit()
-                else:
-                    self.downPressed.emit()
+                self.send_key(expected)
                 self.last_key_time["LeftY"] = current_time
 
         # 3. Poll Right Stick axes
@@ -225,23 +230,20 @@ class GamepadManager(QObject):
         if new_rx_state != self.last_axis_state["RightX"]:
             self.last_axis_state["RightX"] = new_rx_state
             if new_rx_state == -1:
-                self.leftPressed.emit()
-                self.last_key_sent["RightX"] = "left"
+                self.send_key(Qt.Key_Left)
+                self.last_key_sent["RightX"] = Qt.Key_Left
                 self.last_key_time["RightX"] = current_time
             elif new_rx_state == 1:
-                self.rightPressed.emit()
-                self.last_key_sent["RightX"] = "right"
+                self.send_key(Qt.Key_Right)
+                self.last_key_sent["RightX"] = Qt.Key_Right
                 self.last_key_time["RightX"] = current_time
             else:
                 self.last_key_sent.pop("RightX", None)
                 self.last_key_time.pop("RightX", None)
         elif new_rx_state != 0:
-            expected = "left" if new_rx_state == -1 else "right"
+            expected = Qt.Key_Left if new_rx_state == -1 else Qt.Key_Right
             if self.last_key_sent.get("RightX") == expected and (current_time - self.last_key_time.get("RightX", 0) > self.repeat_interval):
-                if new_rx_state == -1:
-                    self.leftPressed.emit()
-                else:
-                    self.rightPressed.emit()
+                self.send_key(expected)
                 self.last_key_time["RightX"] = current_time
 
         # Right Stick Y-axis
@@ -254,23 +256,20 @@ class GamepadManager(QObject):
         if new_ry_state != self.last_axis_state["RightY"]:
             self.last_axis_state["RightY"] = new_ry_state
             if new_ry_state == -1:
-                self.upPressed.emit()
-                self.last_key_sent["RightY"] = "up"
+                self.send_key(Qt.Key_Up)
+                self.last_key_sent["RightY"] = Qt.Key_Up
                 self.last_key_time["RightY"] = current_time
             elif new_ry_state == 1:
-                self.downPressed.emit()
-                self.last_key_sent["RightY"] = "down"
+                self.send_key(Qt.Key_Down)
+                self.last_key_sent["RightY"] = Qt.Key_Down
                 self.last_key_time["RightY"] = current_time
             else:
                 self.last_key_sent.pop("RightY", None)
                 self.last_key_time.pop("RightY", None)
         elif new_ry_state != 0:
-            expected = "up" if new_ry_state == -1 else "down"
+            expected = Qt.Key_Up if new_ry_state == -1 else Qt.Key_Down
             if self.last_key_sent.get("RightY") == expected and (current_time - self.last_key_time.get("RightY", 0) > self.repeat_interval):
-                if new_ry_state == -1:
-                    self.upPressed.emit()
-                else:
-                    self.downPressed.emit()
+                self.send_key(expected)
                 self.last_key_time["RightY"] = current_time
 
         # 4. Poll Triggers (L2/R2)
@@ -305,13 +304,13 @@ class GamepadManager(QObject):
         elif btn == sdl2.SDL_CONTROLLER_BUTTON_Y:
             self.yPressed.emit()
         elif btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_UP:
-            self.upPressed.emit()
+            self.send_key(Qt.Key_Up)
         elif btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-            self.downPressed.emit()
+            self.send_key(Qt.Key_Down)
         elif btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-            self.leftPressed.emit()
+            self.send_key(Qt.Key_Left)
         elif btn == sdl2.SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-            self.rightPressed.emit()
+            self.send_key(Qt.Key_Right)
         elif btn == sdl2.SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
             self.l1Pressed.emit()
         elif btn == sdl2.SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
