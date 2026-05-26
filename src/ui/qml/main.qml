@@ -66,9 +66,38 @@ ApplicationWindow {
         }
     }
 
-    // Controller global actions — delivered via Qt signals, bypasses key routing
+    // All controller input via Qt signals — reliable, bypasses key routing
     Connections {
         target: gamepadManager
+
+        // Navigation — inject into focused item for KeyNavigation handling
+        function onUpPressed() { gamepadManager.injectKey(Qt.Key_Up) }
+        function onDownPressed() { gamepadManager.injectKey(Qt.Key_Down) }
+        function onLeftPressed() { gamepadManager.injectKey(Qt.Key_Left) }
+        function onRightPressed() { gamepadManager.injectKey(Qt.Key_Right) }
+
+        // Select — inject into focused item for item-level handling
+        function onAPressed() { gamepadManager.injectKey(Qt.Key_Return) }
+
+        // LibraryView-specific actions
+        function onXPressed() {
+            if (mainStack.currentItem.objectName === "libraryView")
+                mainStack.currentItem.cycleFilter(1)
+        }
+        function onYPressed() {
+            if (mainStack.currentItem.objectName === "libraryView")
+                mainStack.currentItem.showSortMenu = !mainStack.currentItem.showSortMenu
+        }
+        function onL2Pressed() {
+            if (mainStack.currentItem.objectName === "libraryView")
+                mainStack.currentItem.cycleFilter(-1)
+        }
+        function onR2Pressed() {
+            if (mainStack.currentItem.objectName === "libraryView")
+                mainStack.currentItem.cycleFilter(1)
+        }
+
+        // Global screen navigation
         function onL1Pressed() {
             if (mainStack.currentItem.objectName === "libraryView")
                 mainStack.replace(homeView)
@@ -77,6 +106,8 @@ ApplicationWindow {
             if (mainStack.currentItem.objectName === "homeView")
                 mainStack.replace(libraryView)
         }
+
+        // Back / Menu
         function onBackPressed() {
             if (mainStack.depth > 1)
                 mainStack.pop()
