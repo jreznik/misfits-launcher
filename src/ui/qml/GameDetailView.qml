@@ -110,35 +110,38 @@ Item {
 
         Rectangle {
             anchors.centerIn: parent
-            width: 500; height: 280; radius: 16
-            color: "#1a1b26"; border.color: "#3d4450"; border.width: 2
+            width: 640; height: 300; radius: 8
+            color: "#1a1b26"; border.color: "#3d4450"; border.width: 1
 
             ColumnLayout {
                 anchors.fill: parent; anchors.margins: 40
-                spacing: 30
+                spacing: 25
 
                 Text {
                     text: "Uninstall Game?"
-                    color: "white"; font.pixelSize: 28; font.bold: true
-                    Layout.alignment: Qt.AlignCenter
+                    color: "white"; font.pixelSize: 26; font.bold: true
+                    Layout.fillWidth: true; Layout.alignment: Qt.AlignCenter
+                    horizontalAlignment: Text.AlignHCenter
                 }
 
                 Text {
                     text: "This will permanently remove the game files.\\nYour saves and cloud data will not be affected."
-                    color: "#aaaaaa"; font.pixelSize: 16
-                    Layout.alignment: Qt.AlignCenter; horizontalAlignment: Text.AlignHCenter
+                    color: "#888888"; font.pixelSize: 15
+                    Layout.fillWidth: true; Layout.alignment: Qt.AlignCenter
+                    horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WordWrap
                 }
 
+                Item { Layout.fillHeight: true }
+
                 RowLayout {
-                    Layout.fillWidth: true; spacing: 20
+                    Layout.fillWidth: true; Layout.preferredHeight: 50; spacing: 16
 
                     Rectangle {
                         id: cancelUninstallBtn
-                        Layout.fillWidth: true; height: 60; radius: 30
-                        color: activeFocus ? "#3d4450" : "#2a2a2a"
-                        border.color: activeFocus ? "white" : "transparent"; border.width: 2
-                        Text { anchors.centerIn: parent; text: "CANCEL"; color: "white"; font.bold: true; font.pixelSize: 18 }
+                        Layout.fillWidth: true; Layout.fillHeight: true
+                        color: activeFocus ? "#1999ff" : "#3d4450"
+                        Text { anchors.centerIn: parent; text: "CANCEL"; color: "white"; font.bold: true; font.pixelSize: 16 }
                         MouseArea { anchors.fill: parent; onClicked: { showConfirmUninstall = false; primaryActionBtn.forceActiveFocus() } }
                         Keys.onPressed: (event) => {
                             if (event.key === Qt.Key_Return || event.key === Qt.Key_Select) {
@@ -146,14 +149,14 @@ Item {
                             }
                         }
                         KeyNavigation.right: confirmUninstallBtn
+                        KeyNavigation.tab: confirmUninstallBtn
                     }
 
                     Rectangle {
                         id: confirmUninstallBtn
-                        Layout.fillWidth: true; height: 60; radius: 30
-                        color: activeFocus ? "#c0392b" : "#8e1a1a"
-                        border.color: activeFocus ? "white" : "transparent"; border.width: 2
-                        Text { anchors.centerIn: parent; text: "CONFIRM"; color: "white"; font.bold: true; font.pixelSize: 18 }
+                        Layout.fillWidth: true; Layout.fillHeight: true
+                        color: activeFocus ? "#1999ff" : "#3d4450"
+                        Text { anchors.centerIn: parent; text: "CONFIRM"; color: "white"; font.bold: true; font.pixelSize: 16 }
                         MouseArea { anchors.fill: parent; onClicked: { showConfirmUninstall = false; gameManager.uninstall_game(appId); isLaunching = true; launchStatus = "Uninstalling..." } }
                         Keys.onPressed: (event) => {
                             if (event.key === Qt.Key_Return || event.key === Qt.Key_Select) {
@@ -161,6 +164,7 @@ Item {
                             }
                         }
                         KeyNavigation.left: cancelUninstallBtn
+                        KeyNavigation.backtab: cancelUninstallBtn
                     }
                 }
             }
@@ -483,5 +487,9 @@ Item {
         function onRowsRemoved() { checkDownloadStatus() }
     }
 
-    Component.onCompleted: { gameManager.fetch_game_info(appId) }
+    Component.onCompleted: {
+        isLoading = false
+        primaryActionBtn.forceActiveFocus()
+        gameManager.fetch_game_info(appId)
+    }
 }
