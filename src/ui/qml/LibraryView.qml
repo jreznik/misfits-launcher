@@ -157,7 +157,7 @@ Item {
             cellWidth: 235
             cellHeight: 360
             model: gameManager ? gameManager.libraryModel : null
-            clip: true
+            clip: false
             keyNavigationEnabled: true
             highlightFollowsCurrentItem: true
             focus: true
@@ -180,7 +180,7 @@ Item {
                 appId: model.appId
                 isInstalled: model.isInstalled
                 isNew: index % 4 === 0
-                dateLabel: "May 19, 2026"
+                dateLabel: model.installTimestamp > 0 ? new Date(model.installTimestamp * 1000).toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'}) : ""
                 compatTier: model.protonTier || ""
                 isHero: false
                 focus: GridView.isCurrentItem
