@@ -2,6 +2,10 @@ import subprocess
 import json
 import sqlite3
 import time
+import os
+import urllib.request
+import urllib.error
+from datetime import datetime, timezone
 from .database import get_db_connection
 
 class EpicService:
@@ -31,9 +35,68 @@ class EpicService:
             return False
 
     @staticmethod
+    def fetch_acquisition_dates():
+        """Fetches acquisition dates from Epic library API using legendary's auth token."""
+        try:
+            auth_path = os.path.expanduser("~/.config/legendary/user.json")
+            meta_dir = os.path.expanduser("~/.config/legendary/metadata")
+            if not os.path.exists(auth_path) or not os.path.exists(meta_dir):
+                return {}
+
+            with open(auth_path) as f:
+                auth = json.load(f)
+            token = auth.get("access_token")
+            if not token:
+                return {}
+
+            req = urllib.request.Request(
+                "https://library-service.live.use1a.on.epicgames.com/library/api/public/items",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                lib_data = json.load(resp)
+
+            records = lib_data.get("records", [])
+            cat_to_date = {}
+            for r in records:
+                cat_id = r.get("catalogItemId")
+                acq = r.get("acquisitionDate")
+                if cat_id and acq:
+                    dt = datetime.fromisoformat(acq.replace("Z", "+00:00"))
+                    cat_to_date[cat_id] = int(dt.timestamp())
+
+            # Map catalog_item_id -> app_name from legendary metadata files
+            cat_to_app = {}
+            for fname in os.listdir(meta_dir):
+                if not fname.endswith(".json"):
+                    continue
+                with open(os.path.join(meta_dir, fname)) as f:
+                    try:
+                        meta = json.load(f)
+                    except json.JSONDecodeError:
+                        continue
+                app_name = meta.get("app_name")
+                asset_info = meta.get("asset_infos", {}).get("Windows", {})
+                cat_id = asset_info.get("catalog_item_id")
+                if app_name and cat_id:
+                    cat_to_app[cat_id] = app_name
+
+            # Build final map: app_name -> unix timestamp
+            result = {}
+            for cat_id, ts in cat_to_date.items():
+                app_name = cat_to_app.get(cat_id)
+                if app_name:
+                    result[app_name] = ts
+            return result
+        except Exception as e:
+            print(f"Epic acquisition date fetch error: {e}")
+            return {}
+
+    @staticmethod
     def sync_library():
         """Fetches library from legendary and updates the local database."""
         try:
+            acq_dates = EpicService.fetch_acquisition_dates()
             # 1. Fetch full game list
             process = subprocess.run(
                 ["legendary", "list-games", "--json"],
@@ -60,9 +123,10 @@ class EpicService:
 
             now = int(time.time())
             for game in games_data:
-                app_id = game.get("app_name") # Internal Epic ID
+                app_id = game.get("app_name")
                 name = game.get("app_title")
                 is_installed = 1 if app_id in installed_ids else 0
+                install_ts = acq_dates.get(app_id, now)
                 
                 # Metadata extraction
                 metadata = game.get("metadata", {})
@@ -107,8 +171,13 @@ class EpicService:
                         artwork_path=excluded.artwork_path,
                         hero_path=excluded.hero_path,
                         logo_path=excluded.logo_path,
-                        description=excluded.description
-                ''', (app_id, name, "Epic", is_installed, artwork, hero, logo, now, description))
+                        description=excluded.description,
+                        install_timestamp=CASE
+                            WHEN excluded.install_timestamp < games.install_timestamp OR games.install_timestamp = 0
+                            THEN excluded.install_timestamp
+                            ELSE games.install_timestamp
+                        END
+                ''', (app_id, name, "Epic", is_installed, artwork, hero, logo, install_ts, description))
 
             conn.commit()
             conn.close()

@@ -13,11 +13,7 @@ Item {
     // Hardened focus handoff
     onActiveFocusChanged: {
         if (activeFocus) {
-            if (recentShelf.visible && recentShelf.count > 0) {
-                recentShelf.forceActiveFocus()
-            } else {
-                newestShelf.forceActiveFocus()
-            }
+            recentAllShelf.forceActiveFocus()
         }
     }
 
@@ -59,26 +55,25 @@ Item {
             font.bold: true
         }
         
-        // Shelf 1: Recently Played
+        // Shelf: Recently Played + Recently Added (merged like Steam Deck)
         Column {
             width: parent.width
             spacing: 20
-            visible: gameManager && gameManager.recentModel.rowCount() > 0
             
             Text {
-                text: "RECENTLY PLAYED"
+                text: "RECENT"
                 color: "#aaaaaa"
                 font.pixelSize: 18
                 font.letterSpacing: 2
             }
             
             ListView {
-                id: recentShelf
+                id: recentAllShelf
                 width: parent.width
-                height: 240
+                height: 360
                 orientation: ListView.Horizontal
                 spacing: 20
-                model: gameManager ? gameManager.recentModel : null
+                model: gameManager ? gameManager.recentAllModel : null
                 clip: false
                 
                 keyNavigationEnabled: true
@@ -86,7 +81,7 @@ Item {
                 focus: true
 
                 onCurrentItemChanged: {
-                    if (activeFocus && currentItem) {
+                    if (currentItem) {
                         homeRoot.backgroundArt = currentItem.artwork
                     }
                 }
@@ -102,61 +97,12 @@ Item {
                     artwork: model.artwork
                     appId: model.appId
                     isInstalled: model.isInstalled
-                    isHero: true
+                    isNew: model.isNew
+                    isHero: index === 0
+                    showTitle: true
+                    dateLabel: model.isNew && model.installTimestamp > 0 ? new Date(model.installTimestamp * 1000).toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'}) : ""
                     focus: ListView.isCurrentItem
                 }
-                
-                KeyNavigation.down: newestShelf
-            }
-        }
-        
-        // Shelf 2: Recently Added
-        Column {
-            width: parent.width
-            spacing: 20
-            
-            Text {
-                text: "RECENTLY ADDED"
-                color: "#aaaaaa"
-                font.pixelSize: 18
-                font.letterSpacing: 2
-            }
-            
-            ListView {
-                id: newestShelf
-                width: parent.width
-                height: 320
-                orientation: ListView.Horizontal
-                spacing: 20
-                model: gameManager ? gameManager.recentlyAddedModel : null
-                clip: false
-                
-                keyNavigationEnabled: true
-                highlightFollowsCurrentItem: true
-
-                onCurrentItemChanged: {
-                    if (activeFocus && currentItem) {
-                        homeRoot.backgroundArt = currentItem.artwork
-                    }
-                }
-                
-                onActiveFocusChanged: {
-                    if (activeFocus && currentItem) {
-                        homeRoot.backgroundArt = currentItem.artwork
-                    }
-                }
-
-                delegate: GameCapsule {
-                    title: model.name
-                    artwork: model.artwork
-                    appId: model.appId
-                    isInstalled: model.isInstalled
-                    isNew: true
-                    isHero: false
-                    focus: ListView.isCurrentItem
-                }
-                
-                KeyNavigation.up: recentShelf
             }
         }
     }

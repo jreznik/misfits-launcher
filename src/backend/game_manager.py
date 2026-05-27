@@ -7,6 +7,7 @@ from .database import get_db_connection
 from .umu_launcher import UMULauncher, find_umu_run
 from .steam_injector import add_to_steam as steam_add
 from .game_service import GameService
+from .protondb_service import ProtonDBService
 
 class GameModel(QAbstractListModel):
     AppIdRole = Qt.UserRole + 1
@@ -18,6 +19,8 @@ class GameModel(QAbstractListModel):
     HeroRole = Qt.UserRole + 7
     LogoRole = Qt.UserRole + 8
     ProtonTierRole = Qt.UserRole + 9
+    InstallTimestampRole = Qt.UserRole + 10
+    IsNewRole = Qt.UserRole + 11
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -41,6 +44,8 @@ class GameModel(QAbstractListModel):
         if role == self.HeroRole: return game.get('hero_path', '')
         if role == self.LogoRole: return game.get('logo_path', '')
         if role == self.ProtonTierRole: return game.get('protondb_tier', '')
+        if role == self.InstallTimestampRole: return game.get('install_timestamp', 0)
+        if role == self.IsNewRole: return bool(game.get('is_new', False))
         return None
 
     def roleNames(self):
@@ -53,7 +58,9 @@ class GameModel(QAbstractListModel):
             self.ArtworkRole: b"artwork",
             self.HeroRole: b"hero",
             self.LogoRole: b"logo",
-            self.ProtonTierRole: b"protonTier"
+            self.ProtonTierRole: b"protonTier",
+            self.InstallTimestampRole: b"installTimestamp",
+            self.IsNewRole: b"isNew"
         }
 
     def update_games(self, games):
@@ -80,6 +87,7 @@ class GameManager(QObject):
         self._recent_model = GameModel()
         self._library_model = GameModel()
         self._added_model = GameModel()
+        self._recent_all_model = GameModel()
         self._service = GameService()
         
         # State
@@ -99,9 +107,51 @@ class GameManager(QObject):
         self._launcher.output_received.connect(self.launch_status_changed)
         self._launcher.game_started.connect(self._on_game_started)
         self.refresh_models()
+        self.precache_protondb()
 
     def _on_game_started(self, app_id, timestamp):
         self.last_played_updated.emit(app_id, timestamp)
+
+    def precache_protondb(self):
+        def run():
+            try:
+                conn = get_db_connection()
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute("SELECT app_id, name FROM games WHERE protondb_tier IS NULL OR protondb_tier = ''")
+                uncached = [dict(r) for r in cursor.fetchall()]
+                conn.close()
+
+                for game in uncached:
+                    title = game.get("name")
+                    if not title:
+                        continue
+                    try:
+                        compat = ProtonDBService.get_game_compatibility(title)
+                        if compat:
+                            tier = compat.get("tier", "")
+                            steam_desc = compat.get("steam_description", "")
+                            if tier or steam_desc:
+                                print(f"ProtonDB precache: {title} -> {tier or '-'}")
+                                conn = get_db_connection()
+                                cursor = conn.cursor()
+                                if steam_desc:
+                                    cursor.execute(
+                                        "UPDATE games SET protondb_tier = ?, description = COALESCE(NULLIF(description, ''), ?) WHERE app_id = ?",
+                                        (tier, steam_desc, game["app_id"])
+                                    )
+                                else:
+                                    cursor.execute("UPDATE games SET protondb_tier = ? WHERE app_id = ?",
+                                                   (tier, game["app_id"]))
+                                conn.commit()
+                                conn.close()
+                    except Exception:
+                        pass
+                    time.sleep(1)  # avoid rate limiting
+            except Exception as e:
+                print(f"ProtonDB precache error: {e}")
+
+        threading.Thread(target=run, daemon=True).start()
 
     @Property(str, notify=sort_info_changed)
     def currentSortField(self): return self._sort_field
@@ -172,6 +222,8 @@ class GameManager(QObject):
     def libraryModel(self): return self._library_model
     @Property(QObject, constant=True)
     def recentlyAddedModel(self): return self._added_model
+    @Property(QObject, constant=True)
+    def recentAllModel(self): return self._recent_all_model
 
     @Slot()
     def refresh_models(self):
@@ -183,6 +235,21 @@ class GameManager(QObject):
             self._recent_model.update_games([dict(row) for row in cursor.fetchall()])
             cursor.execute("SELECT * FROM games ORDER BY install_timestamp DESC LIMIT 15")
             self._added_model.update_games([dict(row) for row in cursor.fetchall()])
+
+            # Merged model: recently played first, then recently added (unplayed)
+            cursor.execute("SELECT * FROM games WHERE last_played_timestamp > 0 ORDER BY last_played_timestamp DESC LIMIT 10")
+            recent_played = [dict(row) for row in cursor.fetchall()]
+            recently_played_app_ids = {g['app_id'] for g in recent_played}
+            cursor.execute("SELECT * FROM games ORDER BY install_timestamp DESC LIMIT 20")
+            all_recent = [dict(row) for row in cursor.fetchall()]
+            merged = []
+            merged += recent_played
+            for g in all_recent:
+                if g['app_id'] not in recently_played_app_ids:
+                    g['is_new'] = True
+                    merged.append(g)
+            self._recent_all_model.update_games(merged)
+
             conn.close()
             self.apply_filter_sort()
         except Exception as e:
