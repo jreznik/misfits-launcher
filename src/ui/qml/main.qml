@@ -30,7 +30,6 @@ ApplicationWindow {
             }
         }
 
-        // Catches keyboard PgUp/PgDown delivered directly when StackView has focus
         Keys.onPressed: (event) => {
             if (event.key === Qt.Key_PageDown) {
                 if (mainStack.currentItem.objectName === "homeView") {
@@ -42,26 +41,21 @@ ApplicationWindow {
                     mainStack.replace(homeView)
                     event.accepted = true
                 }
-            }
-        }
-    }
-
-    // Keyboard shortcuts (these work via OS key delivery to focused items)
-    Keys.onPressed: (event) => {
-        if (event.key === Qt.Key_M || event.key === Qt.Key_Menu) {
-            if (mainStack.currentItem.objectName !== "settingsView") {
-                mainStack.push(settingsView)
-                event.accepted = true
-            }
-        } else if (event.key === Qt.Key_D) {
-            if (mainStack.currentItem.objectName !== "downloadView") {
-                mainStack.push(downloadView)
-                event.accepted = true
-            }
-        } else if (event.key === Qt.Key_Escape || event.key === Qt.Key_B) {
-            if (mainStack.depth > 1) {
-                mainStack.pop()
-                event.accepted = true
+            } else if (event.key === Qt.Key_M || event.key === Qt.Key_Menu) {
+                if (mainStack.currentItem.objectName !== "settingsView") {
+                    mainStack.push(settingsView)
+                    event.accepted = true
+                }
+            } else if (event.key === Qt.Key_D) {
+                if (mainStack.currentItem.objectName !== "downloadView") {
+                    mainStack.push(downloadView)
+                    event.accepted = true
+                }
+            } else if (event.key === Qt.Key_Escape || event.key === Qt.Key_B) {
+                if (mainStack.depth > 1) {
+                    mainStack.pop()
+                    event.accepted = true
+                }
             }
         }
     }

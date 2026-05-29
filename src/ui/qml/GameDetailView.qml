@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "."
 
 Item {
     id: detailRoot
@@ -12,12 +13,20 @@ Item {
     property string appId: ""
     property string launchStatus: ""
     property bool isLaunching: false
+
+    Keys.onPressed: (event) => {
+        if (event.key === Qt.Key_Escape || event.key === Qt.Key_B) {
+            mainStack.pop()
+            event.accepted = true
+        }
+    }
     property real installProgress: 0
     property string installStatus: ""
     property bool isInstalling: false
     property bool isLoading: true
     property bool isDownloading: false
-    property bool showConfirmUninstall: false
+    property string downloadSpeed: ""
+    property string downloadEta: ""
     
     // Reactive properties
     property string gameDescription: ""
@@ -100,80 +109,36 @@ Item {
     }
 
     // Uninstall Confirmation Dialog
-    Rectangle {
-        id: confirmOverlay
-        anchors.fill: parent
-        color: "black"
-        opacity: 0.85
-        visible: showConfirmUninstall
-        z: 250
-
-        Rectangle {
-            anchors.centerIn: parent
-            width: 640; height: 300; radius: 8
-            color: "#1a1b26"; border.color: "#3d4450"; border.width: 1
-
-            ColumnLayout {
-                anchors.fill: parent; anchors.margins: 40
-                spacing: 25
-
-                Text {
-                    text: "Uninstall Game?"
-                    color: "white"; font.pixelSize: 26; font.bold: true
-                    Layout.fillWidth: true; Layout.alignment: Qt.AlignCenter
-                    horizontalAlignment: Text.AlignHCenter
-                }
-
-                Text {
-                    text: "This will permanently remove the game files.\\nYour saves and cloud data will not be affected."
-                    color: "#888888"; font.pixelSize: 15
-                    Layout.fillWidth: true; Layout.alignment: Qt.AlignCenter
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                }
-
-                Item { Layout.fillHeight: true }
-
-                RowLayout {
-                    Layout.fillWidth: true; Layout.preferredHeight: 50; spacing: 16
-
-                    Rectangle {
-                        id: cancelUninstallBtn
-                        Layout.fillWidth: true; Layout.fillHeight: true
-                        color: activeFocus ? "#1999ff" : "#3d4450"
-                        Text { anchors.centerIn: parent; text: "CANCEL"; color: "white"; font.bold: true; font.pixelSize: 16 }
-                        MouseArea { anchors.fill: parent; onClicked: { showConfirmUninstall = false; primaryActionBtn.forceActiveFocus() } }
-                        Keys.onPressed: (event) => {
-                            if (event.key === Qt.Key_Return || event.key === Qt.Key_Select) {
-                                showConfirmUninstall = false; primaryActionBtn.forceActiveFocus(); event.accepted = true
-                            }
-                        }
-                        KeyNavigation.right: confirmUninstallBtn
-                        KeyNavigation.tab: confirmUninstallBtn
-                    }
-
-                    Rectangle {
-                        id: confirmUninstallBtn
-                        Layout.fillWidth: true; Layout.fillHeight: true
-                        color: activeFocus ? "#1999ff" : "#3d4450"
-                        Text { anchors.centerIn: parent; text: "CONFIRM"; color: "white"; font.bold: true; font.pixelSize: 16 }
-                        MouseArea { anchors.fill: parent; onClicked: { showConfirmUninstall = false; gameManager.uninstall_game(appId); isLaunching = true; launchStatus = "Uninstalling..." } }
-                        Keys.onPressed: (event) => {
-                            if (event.key === Qt.Key_Return || event.key === Qt.Key_Select) {
-                                showConfirmUninstall = false; gameManager.uninstall_game(appId); isLaunching = true; launchStatus = "Uninstalling..."; event.accepted = true
-                            }
-                        }
-                        KeyNavigation.left: cancelUninstallBtn
-                        KeyNavigation.backtab: cancelUninstallBtn
-                    }
-                }
-            }
+    ConfirmDialog {
+        id: uninstallConfirm
+        title: "Uninstall Game?"
+        message: "This will permanently remove the game files.\\nYour saves and cloud data will not be affected."
+        confirmText: "CONFIRM"
+        cancelText: "CANCEL"
+        showStorageOptions: false
+        onConfirmed: {
+            gameManager.uninstall_game(appId)
+            isLaunching = true
+            launchStatus = "Uninstalling..."
         }
+        onCancelled: {
+            primaryActionBtn.forceActiveFocus()
+        }
+    }
 
-        Keys.onPressed: (event) => {
-            if (event.key === Qt.Key_Escape || event.key === Qt.Key_Back) {
-                showConfirmUninstall = false; primaryActionBtn.forceActiveFocus(); event.accepted = true
-            }
+    // Install Confirmation Dialog
+    ConfirmDialog {
+        id: installConfirm
+        title: "Install Game?"
+        message: "Choose installation location:"
+        confirmText: "INSTALL"
+        cancelText: "CANCEL"
+        showStorageOptions: true
+        onConfirmed: function(path) {
+            gameManager.install_game(appId, path)
+        }
+        onCancelled: {
+            primaryActionBtn.forceActiveFocus()
         }
     }
 
@@ -212,19 +177,27 @@ Item {
                             color: "white"; font.pixelSize: 28; font.bold: true
                         }
                     }
+                    // Download progress bar under the button
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        width: parent.width * (installProgress / 100.0)
+                        height: 4
+                        visible: isDownloading || isInstalling
+                        color: "#3a91f4"
+                    }
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
                             if (isDownloading) mainStack.push(downloadView)
                             else if (gameData.is_installed) gameManager.launch_game(appId)
-                            else downloadManager.add_to_queue(appId, gameData.app_title)
+                            else installConfirm.visible = true
                         }
                     }
                     Keys.onPressed: (event) => {
                         if (event.key === Qt.Key_Return || event.key === Qt.Key_Select || event.key === Qt.Key_Enter) {
                             if (isDownloading) mainStack.push(downloadView)
                             else if (gameData.is_installed) gameManager.launch_game(appId)
-                            else downloadManager.add_to_queue(appId, gameData.app_title)
+                            else installConfirm.visible = true
                             event.accepted = true
                         }
                     }
@@ -238,6 +211,7 @@ Item {
                         anchors.fill: parent; anchors.leftMargin: 40; spacing: 40
                         ColumnLayout {
                             spacing: 2
+                            visible: !detailRoot.isDownloading && !detailRoot.isInstalling
                             Text { text: "LAST PLAYED"; color: "#888"; font.pixelSize: 14; font.bold: true }
                             Text { 
                                 text: detailRoot.lastPlayedText
@@ -246,11 +220,39 @@ Item {
                         }
                         ColumnLayout {
                             spacing: 2
-                            visible: detailRoot.gameSizeText !== ""
+                            visible: !detailRoot.isDownloading && !detailRoot.isInstalling && detailRoot.gameSizeText !== ""
                             Text { text: "SIZE"; color: "#888"; font.pixelSize: 14; font.bold: true }
                             Text { 
                                 text: detailRoot.gameSizeText
                                 color: "white"; font.pixelSize: 18; font.bold: true 
+                            }
+                        }
+                        ColumnLayout {
+                            spacing: 2
+                            visible: detailRoot.isDownloading || detailRoot.isInstalling
+                            Text { text: "DOWNLOADING"; color: "#3a91f4"; font.pixelSize: 14; font.bold: true }
+                            Text {
+                                text: detailRoot.installStatus
+                                color: "white"; font.pixelSize: 16; font.bold: true
+                                Layout.fillWidth: true; elide: Text.ElideRight
+                            }
+                        }
+                        ColumnLayout {
+                            spacing: 2
+                            visible: detailRoot.isDownloading || detailRoot.isInstalling
+                            Text { text: "SPEED"; color: "#888"; font.pixelSize: 14; font.bold: true }
+                            Text {
+                                text: detailRoot.downloadSpeed
+                                color: "white"; font.pixelSize: 18; font.bold: true
+                            }
+                        }
+                        ColumnLayout {
+                            spacing: 2
+                            visible: detailRoot.isDownloading || detailRoot.isInstalling
+                            Text { text: "ETA"; color: "#888"; font.pixelSize: 14; font.bold: true }
+                            Text {
+                                text: detailRoot.downloadEta !== "" ? detailRoot.downloadEta : "--:--:--"
+                                color: "white"; font.pixelSize: 18; font.bold: true
                             }
                         }
                     }
@@ -330,11 +332,11 @@ Item {
                         KeyNavigation.left: steamBtn
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: { showConfirmUninstall = true; confirmUninstallBtn.forceActiveFocus() }
+                            onClicked: { uninstallConfirm.visible = true }
                         }
                         Keys.onPressed: (event) => {
                             if (event.key === Qt.Key_Return || event.key === Qt.Key_Select) {
-                                showConfirmUninstall = true; confirmUninstallBtn.forceActiveFocus(); event.accepted = true
+                                uninstallConfirm.visible = true; event.accepted = true
                             }
                         }
                     }
@@ -392,26 +394,15 @@ Item {
         width: parent.width; height: 80; anchors.bottom: parent.bottom; color: "#1a1b26"; opacity: 0.95
         RowLayout {
             anchors.fill: parent; anchors.leftMargin: 40; anchors.rightMargin: 40
-            Row {
-                spacing: 20
-                Layout.alignment: Qt.AlignVCenter
-                Rectangle { width: 60; height: 30; radius: 15; color: "white"; Text { anchors.centerIn: parent; text: "STEAM"; color: "black"; font.pixelSize: 12; font.bold: true } }
-                Text { text: "MENU"; color: "white"; font.pixelSize: 14; font.bold: true }
-            }
             Item { Layout.fillWidth: true }
-            Row {
-                spacing: 30
+            NavigationHints {
                 Layout.alignment: Qt.AlignVCenter
-                Row { spacing: 10
-                    Layout.alignment: Qt.AlignVCenter
-                    Rectangle { width: 24; height: 24; radius: 12; color: "white"; Text { anchors.centerIn: parent; text: "A"; color: "black"; font.bold: true; font.pixelSize: 14 } }
-                    Text { text: "SELECT"; color: "white"; font.pixelSize: 14 }
-                }
-                Row { spacing: 10
-                    Layout.alignment: Qt.AlignVCenter
-                    Rectangle { width: 24; height: 24; radius: 12; color: "white"; Text { anchors.centerIn: parent; text: "B"; color: "black"; font.bold: true; font.pixelSize: 14 } }
-                    Text { text: "BACK"; color: "white"; font.pixelSize: 14 }
-                }
+                controllerMode: gamepadManager.controllerConnected
+                hints: [
+                    {key: "D", label: "DOWNLOADS"},
+                    {key: "Enter", controllerKey: "A", label: "SELECT"},
+                    {key: "Esc", controllerKey: "B", label: "BACK"}
+                ]
             }
         }
     }
@@ -458,6 +449,7 @@ Item {
         }
         function onLaunch_status_changed(status) { launchStatus = status; isLaunching = (status !== "Game finished.") }
         function onInstall_status_changed(id, progress, status) { if (id === appId) { installProgress = progress; installStatus = status; isInstalling = true } }
+        function onInstall_finished(id, success) { if (id === appId) { isInstalling = false; if (!success) { installStatus = "Installation failed."; isInstalling = true } } }
         function onUninstall_status_changed(id, success) { if (id === appId) { isLaunching = false; if (!success) { launchStatus = "Uninstallation failed."; isLaunching = true } } }
     }
 
@@ -467,16 +459,29 @@ Item {
         for (var i = 0; i < downloadManager.model.rowCount(); i++) {
             var index = downloadManager.model.index(i, 0)
             if (downloadManager.model.data(index, Qt.UserRole + 1) === appId) {
-                found = true
-                installProgress = downloadManager.model.data(index, Qt.UserRole + 3)
-                installStatus = downloadManager.model.data(index, Qt.UserRole + 4) + " (" + installProgress.toFixed(1) + "%)"
-                isDownloading = true; break
+                var status = downloadManager.model.data(index, Qt.UserRole + 4)
+                if (status === "Finished" || status === "Failed") {
+                    found = false
+                } else {
+                    found = true
+                    installProgress = downloadManager.model.data(index, Qt.UserRole + 3)
+                    var speed = downloadManager.model.data(index, Qt.UserRole + 5)
+                    var eta = downloadManager.model.data(index, Qt.UserRole + 6)
+                    downloadSpeed = speed ? speed : ""
+                    downloadEta = eta ? eta : ""
+                    installStatus = status === "Downloading" ? installProgress.toFixed(1) + "%" : status
+                }
+                break
             }
         }
         if (!found && isDownloading) { 
             isDownloading = false
             isInstalling = false
+            downloadSpeed = ""
+            downloadEta = ""
             gameManager.fetch_game_info(appId) 
+        } else if (found && !isDownloading) {
+            isDownloading = true
         }
     }
 

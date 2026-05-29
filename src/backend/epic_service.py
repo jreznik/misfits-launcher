@@ -8,6 +8,70 @@ import urllib.error
 from datetime import datetime, timezone
 from .database import get_db_connection
 
+LEGENDARY_CONFIG_DIRS = [
+    os.path.expanduser("~/.config/legendary"),
+    os.path.expanduser("~/.var/app/com.heroicgameslauncher.hgl/config/heroic/legendaryConfig/legendary"),
+]
+
+def get_installed_games_from_all_configs():
+    """Read installed.json from all known legendary config paths and merge."""
+    merged = {}
+    for config_dir in LEGENDARY_CONFIG_DIRS:
+        path = os.path.join(config_dir, "installed.json")
+        if os.path.exists(path):
+            try:
+                with open(path) as f:
+                    data = json.load(f)
+                merged.update(data)
+            except Exception:
+                pass
+    return merged
+
+def sync_installed_to_heroic_config(app_id, add=True):
+    """Copy/remove a game entry to/from Flatpak Heroic's legendary installed.json
+    so games installed by MisfitsLauncher appear in Heroic and vice-versa."""
+    heroic_config = os.path.expanduser(
+        "~/.var/app/com.heroicgameslauncher.hgl/config/heroic/legendaryConfig/legendary"
+    )
+    if not os.path.isdir(heroic_config):
+        return
+    heroic_installed = os.path.join(heroic_config, "installed.json")
+    try:
+        if os.path.exists(heroic_installed):
+            with open(heroic_installed) as f:
+                data = json.load(f)
+        else:
+            data = {}
+        if add:
+            standard_installed = os.path.join(LEGENDARY_CONFIG_DIRS[0], "installed.json")
+            if os.path.exists(standard_installed):
+                with open(standard_installed) as f:
+                    std_data = json.load(f)
+                if app_id in std_data:
+                    data[app_id] = std_data[app_id]
+        else:
+            data.pop(app_id, None)
+        with open(heroic_installed, 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"Warning: could not sync to Heroic config: {e}")
+
+def get_install_path_from_all_configs(app_id):
+    """Find install_path for a game across all known legendary configs."""
+    for config_dir in LEGENDARY_CONFIG_DIRS:
+        path = os.path.join(config_dir, "installed.json")
+        if os.path.exists(path):
+            try:
+                with open(path) as f:
+                    data = json.load(f)
+                if app_id in data:
+                    install_path = data[app_id].get("install_path")
+                    if install_path:
+                        return install_path
+            except Exception:
+                pass
+    return None
+
 class EpicService:
     @staticmethod
     def is_installed():
@@ -107,7 +171,7 @@ class EpicService:
                 return False
             games_data = json.loads(process.stdout)
 
-            # 2. Fetch installed games list
+            # 2. Fetch installed games list (check all legendary configs)
             installed_process = subprocess.run(
                 ["legendary", "list-installed", "--json"],
                 capture_output=True,
@@ -117,6 +181,14 @@ class EpicService:
             if installed_process.returncode == 0:
                 installed_data = json.loads(installed_process.stdout)
                 installed_ids = {g.get("app_name") for g in installed_data}
+
+            # Also check Flatpak Heroic's legendary config for installed games
+            try:
+                all_installed = get_installed_games_from_all_configs()
+                for app_id in all_installed:
+                    installed_ids.add(app_id)
+            except Exception:
+                pass
 
             conn = get_db_connection()
             cursor = conn.cursor()

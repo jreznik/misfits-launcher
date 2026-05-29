@@ -1,7 +1,7 @@
 import sys
 import os
 from PySide6.QtGui import QGuiApplication, QKeyEvent
-from PySide6.QtCore import QObject, Signal, Slot, QTimer, QEvent, Qt, QCoreApplication, QDateTime
+from PySide6.QtCore import QObject, Signal, Slot, Property, QTimer, QEvent, Qt, QCoreApplication, QDateTime
 from PySide6.QtQml import QQmlApplicationEngine
 from src.backend.database import init_db
 from src.backend.game_manager import GameManager
@@ -23,10 +23,12 @@ class GamepadManager(QObject):
     menuPressed = Signal()
     l1Pressed = Signal()
     r1Pressed = Signal()
+    controllerConnectedChanged = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.controller = None
+        self._controller_connected = False
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.poll_gamepad)
         
@@ -65,6 +67,16 @@ class GamepadManager(QObject):
         except Exception as e:
             print(f"DEBUG: SDL2 import or init failed: {e}")
 
+    @Property(bool, notify=controllerConnectedChanged)
+    def controllerConnected(self):
+        return self._controller_connected
+
+    def _update_controller_connected(self):
+        connected = self.controller is not None
+        if connected != self._controller_connected:
+            self._controller_connected = connected
+            self.controllerConnectedChanged.emit()
+
     def find_controller(self):
         import sdl2
         import sdl2.joystick
@@ -81,6 +93,7 @@ class GamepadManager(QObject):
                     name = sdl2.SDL_GameControllerName(self.controller).decode('utf-8', 'ignore')
                     print(f"DEBUG: Opened Game Controller: {name}")
                     break
+        self._update_controller_connected()
         if not self.controller:
             print("DEBUG: No gamepad/game controller detected yet.")
 
@@ -130,6 +143,7 @@ class GamepadManager(QObject):
                 if self.controller:
                     sdl2.SDL_GameControllerClose(self.controller)
                     self.controller = None
+                    self._update_controller_connected()
                     
         if not self.controller:
             return
@@ -333,10 +347,10 @@ def main():
 
     engine = QQmlApplicationEngine()
 
-    game_manager = GameManager()
+    download_manager = DownloadManager()
+    game_manager = GameManager(download_manager)
     account_manager = AccountManager()
     umu_manager = UMURuntimeManager()
-    download_manager = DownloadManager()
     
     # Connect account changes to library refreshes
     account_manager.accounts_changed.connect(game_manager.refresh_models)

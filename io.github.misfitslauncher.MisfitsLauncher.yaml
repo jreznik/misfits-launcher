@@ -18,6 +18,7 @@ finish-args:
   - --filesystem=xdg-run/app/com.steampowered.Steam:ro
   - --filesystem=xdg-run/gamescope-0
   - --filesystem=~/.steam
+  - --filesystem=~/.var/app/com.heroicgameslauncher.hgl/config/heroic/legendaryConfig/legendary
   - --filesystem=/run/udev:ro
   - --talk-name=org.freedesktop.Notifications
   - --talk-name=org.freedesktop.Flatpak

@@ -32,6 +32,14 @@ def init_db():
             protondb_tier TEXT
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS download_queue (
+            app_id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            base_path TEXT,
+            status TEXT DEFAULT 'Queued'
+        )
+    ''')
     conn.commit()
     conn.close()
 

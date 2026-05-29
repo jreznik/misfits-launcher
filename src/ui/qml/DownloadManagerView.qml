@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "."
 
 Item {
     id: downloadRoot
@@ -15,7 +16,10 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 60
+        anchors.topMargin: 60
+        anchors.leftMargin: 60
+        anchors.rightMargin: 60
+        anchors.bottomMargin: 80
         spacing: 30
 
         Text {
@@ -152,11 +156,21 @@ Item {
             
             focus: true
         }
+    }
 
-        Text {
-            text: "Press 'B' or 'Esc' to Return"
-            color: "#aaaaaa"
-            font.pixelSize: 18
+    // Bottom Navigation Bar
+    Rectangle {
+        id: bottomBar
+        width: parent.width; height: 80; anchors.bottom: parent.bottom; color: "#1a1b26"; opacity: 0.95
+        RowLayout {
+            anchors.fill: parent; anchors.leftMargin: 40; anchors.rightMargin: 40
+            Item { Layout.fillWidth: true }
+            NavigationHints {
+                controllerMode: gamepadManager.controllerConnected
+                hints: [
+                    {key: "Esc", controllerKey: "B", label: "BACK"}
+                ]
+            }
         }
     }
 }

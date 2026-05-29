@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "."
 
 Item {
     id: libraryRoot
@@ -243,36 +244,17 @@ Item {
             anchors.fill: parent
             anchors.leftMargin: 40
             anchors.rightMargin: 40
-            Row {
-                spacing: 20
-                Rectangle { width: 60; height: 30; radius: 15; color: "white"; Text { anchors.centerIn: parent; text: "STEAM"; color: "black"; font.pixelSize: 12; font.bold: true } }
-                Text { text: "MENU"; color: "white"; font.pixelSize: 14; font.bold: true; anchors.verticalCenter: parent.verticalCenter }
-            }
             Item { Layout.fillWidth: true }
-            Row {
-                spacing: 30
-                
-                Row { spacing: 10
-                    Rectangle { width: 24; height: 24; radius: 12; color: "white"; Text { anchors.centerIn: parent; text: "M"; color: "black"; font.bold: true; font.pixelSize: 14 } }
-                    Text { text: "SETTINGS"; color: "white"; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter }
-                }
-                Row { spacing: 10
-                    Rectangle { width: 24; height: 24; radius: 12; color: "white"; Text { anchors.centerIn: parent; text: "X"; color: "black"; font.bold: true; font.pixelSize: 14 } }
-                    Text { text: "FILTER:"; color: "white"; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter }
-                    Text { text: "✓"; color: "#28a745"; font.pixelSize: 16; anchors.verticalCenter: parent.verticalCenter; font.bold: true }
-                }
-                Row { spacing: 10
-                    Rectangle { width: 24; height: 24; radius: 12; color: "white"; Text { anchors.centerIn: parent; text: "Y"; color: "black"; font.bold: true; font.pixelSize: 14 } }
-                    Text { text: "SORT BY"; color: "white"; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter }
-                }
-                Row { spacing: 10
-                    Rectangle { width: 24; height: 24; radius: 12; color: "white"; Text { anchors.centerIn: parent; text: "A"; color: "black"; font.bold: true; font.pixelSize: 14 } }
-                    Text { text: "SELECT"; color: "white"; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter }
-                }
-                Row { spacing: 10
-                    Rectangle { width: 24; height: 24; radius: 12; color: "white"; Text { anchors.centerIn: parent; text: "B"; color: "black"; font.bold: true; font.pixelSize: 14 } }
-                    Text { text: "BACK"; color: "white"; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter }
-                }
+            NavigationHints {
+                controllerMode: gamepadManager.controllerConnected
+                hints: [
+                    {key: "M", controllerKey: "Options", label: "SETTINGS"},
+                    {key: "D", label: "DOWNLOADS"},
+                    {key: "X", controllerKey: "X", label: "FILTER:"},
+                    {key: "Y", controllerKey: "Y", label: "SORT BY"},
+                    {key: "Enter", controllerKey: "A", label: "SELECT"},
+                    {key: "Esc", controllerKey: "B", label: "BACK"}
+                ]
             }
         }
     }

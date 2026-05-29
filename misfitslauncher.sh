@@ -1,20 +1,31 @@
 #!/bin/bash
 # MisfitsLauncher Entry Point Script
-# Ensures portability and interoperability with host system
+# Works both inside Flatpak and directly on the host.
+# Sets the same environment variables for interoperability with Heroic/legendary.
 
-# 1. Force Legendary to use the host's configuration directory
+# 1. Force Legendary to use the host configuration directory
 export LEGENDARY_CONFIG_PATH="$HOME/.config/legendary"
 
+# 2. Detect environment
+if [ -n "$FLATPAK_ID" ] || [ -d /app/share/misfitslauncher ]; then
+    # --- Running inside Flatpak ---
+    APP_DIR=/app/share/misfitslauncher
 
-# 2. Ensure UMU data is accessible within the Flatpak sandbox
-# We symlink the host's UMU data to the internal XDG_DATA_HOME if it's not already there
-INTERNAL_DATA_DIR="${XDG_DATA_HOME:-$HOME/.var/app/io.github.misfitslauncher.MisfitsLauncher/data}"
-mkdir -p "$INTERNAL_DATA_DIR"
+    # Symlink host UMU data into the sandbox if not already present
+    INTERNAL_DATA_DIR="${XDG_DATA_HOME:-$HOME/.var/app/io.github.misfitslauncher.MisfitsLauncher/data}"
+    mkdir -p "$INTERNAL_DATA_DIR"
+    if [ ! -d "$INTERNAL_DATA_DIR/umu" ] && [ -d "$HOME/.local/share/umu" ]; then
+        ln -s "$HOME/.local/share/umu" "$INTERNAL_DATA_DIR/umu"
+    fi
 
-if [ ! -d "$INTERNAL_DATA_DIR/umu" ] && [ -d "$HOME/.local/share/umu" ]; then
-    ln -s "$HOME/.local/share/umu" "$INTERNAL_DATA_DIR/umu"
+    PYTHON=/usr/bin/python3
+else
+    # --- Running directly on host ---
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    APP_DIR="$SCRIPT_DIR"
+    PYTHON=python3
+    export PYTHONPATH="$APP_DIR${PYTHONPATH:+:$PYTHONPATH}"
 fi
 
-# 3. Launch the Python application
-exec python3 /app/share/misfitslauncher/main.py "$@" > "$HOME/misfits.log" 2>&1
-
+# 3. Launch the application
+exec "$PYTHON" "$APP_DIR/main.py" "$@" > "$HOME/misfits.log" 2>&1

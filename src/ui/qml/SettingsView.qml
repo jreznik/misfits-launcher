@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "."
 
 Item {
     id: settingsRoot
@@ -195,22 +196,13 @@ Item {
         width: parent.width; height: 80; anchors.bottom: parent.bottom; color: "#1a1b26"; opacity: 0.95
         RowLayout {
             anchors.fill: parent; anchors.leftMargin: 40; anchors.rightMargin: 40
-            Row {
-                spacing: 20
-                Rectangle { width: 60; height: 30; radius: 15; color: "white"; Text { anchors.centerIn: parent; text: "STEAM"; color: "black"; font.pixelSize: 12; font.bold: true } }
-                Text { text: "MENU"; color: "white"; font.pixelSize: 14; font.bold: true; anchors.verticalCenter: parent.verticalCenter }
-            }
             Item { Layout.fillWidth: true }
-            Row {
-                spacing: 30
-                Row { spacing: 10
-                    Rectangle { width: 24; height: 24; radius: 12; color: "white"; Text { anchors.centerIn: parent; text: "A"; color: "black"; font.bold: true; font.pixelSize: 14 } }
-                    Text { text: "SELECT"; color: "white"; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter }
-                }
-                Row { spacing: 10
-                    Rectangle { width: 24; height: 24; radius: 12; color: "white"; Text { anchors.centerIn: parent; text: "B"; color: "black"; font.bold: true; font.pixelSize: 14 } }
-                    Text { text: "BACK"; color: "white"; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter }
-                }
+            NavigationHints {
+                controllerMode: gamepadManager.controllerConnected
+                hints: [
+                    {key: "Enter", controllerKey: "A", label: "SELECT"},
+                    {key: "Esc", controllerKey: "B", label: "BACK"}
+                ]
             }
         }
     }
